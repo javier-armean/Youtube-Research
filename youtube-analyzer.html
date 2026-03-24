@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="YT Analyzer">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111110" media="(prefers-color-scheme: dark)">
+<title>Analizador YouTube</title>
+<link rel="manifest" id="manifest-link">
+<style>
+:root {
+  --bg:#f5f5f3;--surface:#fff;--border:rgba(0,0,0,0.11);--border-hi:rgba(0,0,0,0.4);
+  --text:#1a1a1a;--t2:#555;--t3:#999;--accent:#1a1a1a;--accent-fg:#fff;
+  --tag-bg:#e3f0ff;--tag-fg:#1a5fa8;--err-bg:#fdf2f2;--err-bd:#f5c0c0;--err-fg:#b52b2b;
+  --gem:#4285f4;--sb:env(safe-area-inset-bottom,0px);--st:env(safe-area-inset-top,0px);
+  --sl:env(safe-area-inset-left,0px);--sr:env(safe-area-inset-right,0px);
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#111110;--surface:#1c1c1a;--border:rgba(255,255,255,0.1);--border-hi:rgba(255,255,255,0.38);
+  --text:#f0f0ee;--t2:#aaa;--t3:#555;--accent:#f0f0ee;--accent-fg:#111110;
+  --tag-bg:#0f2a4a;--tag-fg:#7ab8f5;--err-bg:#2a1212;--err-bd:#5c2020;--err-fg:#f08080;
+}}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  background:var(--bg);color:var(--text);
+  padding:calc(var(--st) + 1.25rem) calc(var(--sr) + 1rem) calc(var(--sb) + 5.5rem) calc(var(--sl) + 1rem);
+  display:flex;flex-direction:column;align-items:center;min-height:100dvh;
+}
+.wrap{width:100%;max-width:640px}
+
+/* Header */
+.hdr{display:flex;align-items:center;gap:10px;margin-bottom:1.25rem}
+.hdr-icon{width:38px;height:38px;background:#ff0000;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.hdr-icon svg{width:19px;height:19px;fill:#fff}
+.hdr h1{font-size:17px;font-weight:600}
+.hdr p{font-size:12px;color:var(--t3);margin-top:1px}
+
+/* API Key banner */
+.key-banner{background:var(--surface);border:0.5px solid var(--border);border-radius:14px;padding:1rem 1.25rem;margin-bottom:.75rem}
+.key-banner-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.gem-dot{width:8px;height:8px;border-radius:50%;background:var(--gem);flex-shrink:0}
+.key-banner-head span{font-size:13px;font-weight:600;color:var(--text)}
+.key-banner-head a{font-size:12px;color:var(--gem);text-decoration:none;margin-left:auto}
+.key-row{display:flex;gap:8px}
+.key-row input{flex:1;padding:11px 13px;border:0.5px solid var(--border);border-radius:9px;font-size:15px;color:var(--text);background:var(--bg);outline:none;font-family:inherit;-webkit-appearance:none;transition:border-color .15s}
+.key-row input:focus{border-color:var(--border-hi);background:var(--surface)}
+.key-save{padding:11px 16px;background:var(--gem);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit;transition:opacity .15s}
+.key-save:active{opacity:.75}
+.key-ok{display:none;align-items:center;gap:8px;font-size:13px;color:var(--t2)}
+.key-ok .check{width:20px;height:20px;background:#e6f4ea;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#2d7a3a;font-size:12px;font-weight:700;flex-shrink:0}
+.key-ok.show{display:flex}
+.key-row.hide,.key-hint.hide{display:none}
+.key-hint{font-size:12px;color:var(--t3);margin-top:7px;line-height:1.5}
+
+/* Card */
+.card{background:var(--surface);border-radius:16px;border:0.5px solid var(--border);padding:1.25rem;margin-bottom:.75rem}
+.field{margin-bottom:14px}
+label{font-size:11px;font-weight:700;color:var(--t2);display:block;margin-bottom:7px;text-transform:uppercase;letter-spacing:.05em}
+input,textarea,select{
+  width:100%;padding:13px 14px;border:0.5px solid var(--border);border-radius:10px;
+  font-size:16px;color:var(--text);background:var(--bg);outline:none;font-family:inherit;
+  -webkit-appearance:none;appearance:none;transition:border-color .15s,background .15s;
+}
+input:focus,textarea:focus,select:focus{border-color:var(--border-hi);background:var(--surface)}
+textarea{resize:none;min-height:88px;line-height:1.55}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:38px}
+.tabs{display:flex;gap:3px;background:var(--bg);border-radius:10px;padding:3px;margin-bottom:14px}
+.tab{flex:1;padding:9px 6px;text-align:center;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;color:var(--t2);transition:all .15s;user-select:none;min-height:38px;display:flex;align-items:center;justify-content:center}
+.tab.active{background:var(--surface);color:var(--text);border:0.5px solid var(--border)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{padding:8px 13px;border-radius:20px;font-size:13px;cursor:pointer;border:0.5px solid var(--border);color:var(--t2);background:var(--bg);transition:all .15s;user-select:none;min-height:34px;display:flex;align-items:center}
+.chip:active{opacity:.6}
+
+/* Sticky button */
+.bar{position:fixed;bottom:0;left:0;right:0;padding:12px 1rem calc(var(--sb) + 12px);background:linear-gradient(transparent,var(--bg) 35%);z-index:10;display:flex;justify-content:center}
+.bar-inner{width:100%;max-width:640px}
+.btn{width:100%;padding:15px;border-radius:13px;font-size:16px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .15s;user-select:none;min-height:52px}
+.btn-p{background:var(--accent);color:var(--accent-fg)}
+.btn-p:active{opacity:.78;transform:scale(.99)}
+.btn-p:disabled{opacity:.4}
+
+/* Result */
+.res{background:var(--surface);border-radius:16px;border:0.5px solid var(--border);padding:1.25rem;margin-top:.75rem}
+.res-head{display:flex;align-items:flex-start;gap:9px;margin-bottom:12px;padding-bottom:12px;border-bottom:0.5px solid var(--border)}
+.res-tag{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--tag-bg);color:var(--tag-fg);white-space:nowrap;margin-top:1px;display:flex;align-items:center;gap:4px}
+.res-tag svg{width:9px;height:9px;fill:var(--tag-fg)}
+.res-meta{flex:1;min-width:0}
+.res-ch{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.res-q{font-size:12px;color:var(--t3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.res-time{font-size:11px;color:var(--t3);white-space:nowrap}
+.res-body{font-size:15px;line-height:1.8;color:var(--text)}
+.res-body h2,.res-body h3{font-size:15px;font-weight:600;margin:1rem 0 .4rem}
+.res-body p{margin-bottom:.6rem}
+.res-body ul{padding-left:1.2rem;margin-bottom:.6rem}
+.res-body li{margin-bottom:.3rem}
+.res-body strong{font-weight:600}
+.sources{margin-top:12px;padding-top:12px;border-top:0.5px solid var(--border)}
+.sources-lbl{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px}
+.source-item{font-size:12px;color:var(--gem);text-decoration:none;display:block;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Loading */
+.loading{display:flex;align-items:center;gap:12px;padding:1.4rem 1.25rem;background:var(--surface);border-radius:16px;border:0.5px solid var(--border);margin-top:.75rem}
+.spin{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--gem);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading span{font-size:14px;color:var(--t2)}
+.err{background:var(--err-bg);border:0.5px solid var(--err-bd);border-radius:10px;padding:13px 15px;font-size:14px;color:var(--err-fg);margin-top:.75rem;line-height:1.5}
+
+/* History */
+.hist{margin-top:1rem;padding-bottom:1rem}
+.hist-lbl{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:9px}
+.hist-item{padding:12px 14px;background:var(--surface);border-radius:12px;border:0.5px solid var(--border);margin-bottom:7px;cursor:pointer}
+.hist-item:active{opacity:.65}
+.hist-q{font-size:14px;font-weight:500;margin-bottom:3px}
+.hist-m{font-size:12px;color:var(--t3)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hdr">
+    <div class="hdr-icon">
+      <svg viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+    </div>
+    <div>
+      <h1>Analizador de Canal</h1>
+      <p>Gemini + Google Search en tiempo real</p>
+    </div>
+  </div>
+
+  <!-- API Key section -->
+  <div class="key-banner" id="keyBanner">
+    <div class="key-banner-head">
+      <div class="gem-dot"></div>
+      <span>Gemini API Key</span>
+      <a href="https://aistudio.google.com/apikey" target="_blank">Obtener gratis →</a>
+    </div>
+    <div class="key-row" id="keyRow">
+      <input type="password" id="keyInput" placeholder="AIza..." autocomplete="off" spellcheck="false"/>
+      <button class="key-save" onclick="saveKey()">Guardar</button>
+    </div>
+    <div class="key-ok" id="keyOk">
+      <div class="check">✓</div>
+      <span>API key guardada · <span style="cursor:pointer;color:var(--gem)" onclick="resetKey()">Cambiar</span></span>
+    </div>
+    <p class="key-hint" id="keyHint">Gratis en <strong>Google AI Studio</strong>. No se comparte ni se envía a ningún servidor — solo se usa desde tu navegador.</p>
+  </div>
+
+  <div class="card">
+    <div class="field">
+      <label>Canal de YouTube</label>
+      <input type="url" id="chanIn" inputmode="url" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="https://youtube.com/@canal  ·  @canal"/>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" onclick="setMode('g')">Análisis general</div>
+      <div class="tab" onclick="setMode('q')">Consulta específica</div>
+    </div>
+
+    <div id="gMode">
+      <div class="field">
+        <label>¿Qué quieres saber?</label>
+        <select id="gType">
+          <option value="overview">Resumen completo del canal</option>
+          <option value="content">Tipo de contenido y temáticas</option>
+          <option value="audience">Audiencia y comunidad</option>
+          <option value="growth">Crecimiento y trayectoria</option>
+          <option value="monetization">Monetización y negocio</option>
+          <option value="competitors">Canales similares y competencia</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="qMode" style="display:none">
+      <div class="field">
+        <label>Tu pregunta</label>
+        <textarea id="qIn" placeholder="Ej: ¿Cuál es el vídeo más viral? ¿Cuándo empezó a crecer? ¿Qué formatos usa más?" enterkeyhint="send"></textarea>
+      </div>
+      <div class="chips">
+        <span class="chip" onclick="setQ('¿Cuál es el vídeo más viral del canal?')">🔥 Más viral</span>
+        <span class="chip" onclick="setQ('¿Con qué frecuencia publica contenido?')">📅 Frecuencia</span>
+        <span class="chip" onclick="setQ('¿Cuántos suscriptores tiene y cómo ha crecido?')">📈 Crecimiento</span>
+        <span class="chip" onclick="setQ('¿Qué colaboraciones ha hecho este canal?')">🤝 Colabs</span>
+        <span class="chip" onclick="setQ('¿Qué opinan los usuarios sobre este canal?')">💬 Opiniones</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="out"></div>
+
+  <div class="hist" id="histSec" style="display:none">
+    <div class="hist-lbl">Consultas anteriores</div>
+    <div id="histList"></div>
+  </div>
+</div>
+
+<div class="bar">
+  <div class="bar-inner">
+    <button class="btn btn-p" id="goBtn" onclick="go()">Analizar canal</button>
+  </div>
+</div>
+
+<script>
+let mode='g', hist=[];
+
+/* Manifest PWA */
+const mf={name:"Analizador YouTube",short_name:"YT Analyzer",start_url:"./youtube-analyzer.html",display:"standalone",background_color:"#ffffff",theme_color:"#ffffff",icons:[{src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%23ff0000'/%3E%3Cpath d='M152 96l-80 44V52z' fill='white'/%3E%3C/svg%3E",sizes:"192x192",type:"image/svg+xml"}]};
+document.getElementById('manifest-link').href=URL.createObjectURL(new Blob([JSON.stringify(mf)],{type:'application/json'}));
+
+/* API Key management */
+function loadKey(){return localStorage.getItem('gem_key')||'';}
+function saveKey(){
+  const k=document.getElementById('keyInput').value.trim();
+  if(!k){toast('Pega tu API key primero');return;}
+  localStorage.setItem('gem_key',k);
+  showKeyOk();
+}
+function showKeyOk(){
+  document.getElementById('keyRow').classList.add('hide');
+  document.getElementById('keyHint').classList.add('hide');
+  document.getElementById('keyOk').classList.add('show');
+}
+function resetKey(){
+  document.getElementById('keyRow').classList.remove('hide');
+  document.getElementById('keyHint').classList.remove('hide');
+  document.getElementById('keyOk').classList.remove('show');
+  document.getElementById('keyInput').value='';
+  document.getElementById('keyInput').focus();
+}
+(function(){const k=loadKey();if(k){document.getElementById('keyInput').value=k;showKeyOk();}})();
+
+function setMode(m){
+  mode=m;
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',(i===0&&m==='g')||(i===1&&m==='q')));
+  document.getElementById('gMode').style.display=m==='g'?'block':'none';
+  document.getElementById('qMode').style.display=m==='q'?'block':'none';
+}
+function setQ(q){document.getElementById('qIn').value=q;document.getElementById('qIn').focus();}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function mdToHtml(md){
+  return md
+    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/^[\*\-] (.+)$/gm,'<li>$1</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g,'<ul>$&</ul>')
+    .replace(/\n\n/g,'</p><p>')
+    .replace(/^(?!<[hul])/,'<p>')
+    .replace(/(?<![>])$/,'</p>');
+}
+
+function toast(msg){
+  const el=document.createElement('div');
+  Object.assign(el.style,{position:'fixed',bottom:`calc(80px + env(safe-area-inset-bottom,0px))`,left:'50%',transform:'translateX(-50%)',background:'rgba(0,0,0,0.82)',color:'#fff',padding:'10px 18px',borderRadius:'22px',fontSize:'14px',zIndex:'999',whiteSpace:'nowrap',opacity:'0',transition:'opacity .2s'});
+  el.textContent=msg;document.body.appendChild(el);
+  requestAnimationFrame(()=>{el.style.opacity='1';});
+  setTimeout(()=>{el.style.opacity='0';setTimeout(()=>el.remove(),300);},2500);
+}
+
+async function go(){
+  const apiKey=loadKey();
+  if(!apiKey){toast('Guarda tu Gemini API key primero');document.getElementById('keyInput').focus();return;}
+  const ch=document.getElementById('chanIn').value.trim();
+  if(!ch){toast('Introduce la URL o nombre del canal');document.getElementById('chanIn').focus();return;}
+
+  const gLabels={overview:'Haz un resumen completo del canal',content:'Analiza el tipo de contenido y temáticas principales',audience:'Describe la audiencia y la comunidad de este canal',growth:'Analiza el crecimiento y trayectoria del canal',monetization:'Analiza la monetización y modelo de negocio del canal',competitors:'Encuentra canales similares y analiza la competencia'};
+  let q='';
+  if(mode==='g'){q=gLabels[document.getElementById('gType').value];}
+  else{q=document.getElementById('qIn').value.trim();if(!q){toast('Escribe tu consulta');return;}}
+
+  document.activeElement?.blur();
+  const btn=document.getElementById('goBtn');
+  btn.disabled=true;btn.textContent='Analizando…';
+  const out=document.getElementById('out');
+  out.innerHTML=`<div class="loading"><div class="spin"></div><span>Buscando con Google Search…</span></div>`;
+  out.scrollIntoView({behavior:'smooth',block:'nearest'});
+
+  const prompt=`Analiza el canal de YouTube: ${ch}\n\nSolicitud: ${q}\n\nBusca información actualizada y precisa. Incluye datos concretos: suscriptores, vistas totales, fecha de creación, temáticas principales, vídeos destacados, y cualquier dato relevante para responder. Responde en español, con secciones claras.`;
+
+  try{
+    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        contents:[{role:'user',parts:[{text:prompt}]}],
+        tools:[{google_search:{}}]
+      })
+    });
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error?.message||`HTTP ${r.status}`);
+
+    const candidate=d.candidates?.[0];
+    if(!candidate)throw new Error('Sin respuesta del modelo.');
+
+    const txt=candidate.content?.parts?.filter(p=>p.text).map(p=>p.text).join('\n').trim();
+    if(!txt)throw new Error('Respuesta vacía.');
+
+    /* Extract grounding sources */
+    const sources=[];
+    const chunks=candidate.groundingMetadata?.groundingChunks||[];
+    chunks.forEach(c=>{if(c.web?.uri&&c.web?.title)sources.push({url:c.web.uri,title:c.web.title});});
+
+    const entry={ch,q,txt,sources,t:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})};
+    hist.unshift(entry);renderRes(entry);renderHist();
+  }catch(e){
+    out.innerHTML=`<div class="err">⚠️ ${esc(e.message)}</div>`;
+  }finally{btn.disabled=false;btn.textContent='Analizar canal';}
+}
+
+function renderRes(e){
+  const srcHtml=e.sources&&e.sources.length?`
+    <div class="sources">
+      <div class="sources-lbl">Fuentes</div>
+      ${e.sources.slice(0,5).map(s=>`<a class="source-item" href="${esc(s.url)}" target="_blank">${esc(s.title)}</a>`).join('')}
+    </div>`:'';
+  document.getElementById('out').innerHTML=`
+  <div class="res">
+    <div class="res-head">
+      <span class="res-tag"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>Gemini</span>
+      <div class="res-meta">
+        <div class="res-ch">${esc(e.ch)}</div>
+        <div class="res-q">${esc(e.q)}</div>
+      </div>
+      <span class="res-time">${e.t}</span>
+    </div>
+    <div class="res-body">${mdToHtml(e.txt)}</div>
+    ${srcHtml}
+  </div>`;
+}
+
+function renderHist(){
+  if(hist.length<2)return;
+  document.getElementById('histSec').style.display='block';
+  document.getElementById('histList').innerHTML=hist.slice(1).map((e,i)=>`
+    <div class="hist-item" onclick="showE(${i+1})">
+      <div class="hist-q">${esc(e.q)}</div>
+      <div class="hist-m">${esc(e.ch)} · ${e.t}</div>
+    </div>`).join('');
+}
+function showE(i){renderRes(hist[i]);document.getElementById('out').scrollIntoView({behavior:'smooth',block:'start'});}
+
+document.getElementById('chanIn').addEventListener('keydown',e=>{if(e.key==='Enter')go();});
+document.getElementById('qIn').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();go();}});
+document.getElementById('keyInput').addEventListener('keydown',e=>{if(e.key==='Enter')saveKey();});
+</script>
+</body>
+</html>
